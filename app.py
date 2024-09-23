@@ -9,7 +9,7 @@ load_dotenv()
 app = Flask(__name__)
 
 # Configuración de la base de datos
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('postgresql://samvela:2SeoGMqxUjLbo2eZT3xpF7nqJQwrdiDT@dpg-crjk96dumphs73d1nt3g-a/samvela')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://samvela:2SeoGMqxUjLbo2eZT3xpF7nqJQwrdiDT@dpg-crjk96dumphs73d1nt3g-a/samvela'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
