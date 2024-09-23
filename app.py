@@ -38,8 +38,11 @@ class Estudiante(db.Model):
 @app.route('/api/alumnos', methods=['GET'])
 def api_get_alumnos():
     """Obtiene la lista de todos los alumnos."""
-    alumnos = Estudiante.query.all()
-    return jsonify([alumno.to_dict() for alumno in alumnos])
+    try:
+        alumnos = Estudiante.query.all()
+        return jsonify([alumno.to_dict() for alumno in alumnos])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/alumnos/<string:no_control>', methods=['GET'])
 def api_get_alumno(no_control):
@@ -161,4 +164,4 @@ def delete_estudiante(no_control):
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=os.getenv('FLASK_DEBUG', 'False') == 'True')
