@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 
@@ -38,11 +38,8 @@ class Estudiante(db.Model):
 @app.route('/api/alumnos', methods=['GET'])
 def api_get_alumnos():
     """Obtiene la lista de todos los alumnos."""
-    try:
-        alumnos = Estudiante.query.all()
-        return jsonify([alumno.to_dict() for alumno in alumnos])
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    alumnos = Estudiante.query.all()
+    return jsonify([alumno.to_dict() for alumno in alumnos])
 
 @app.route('/api/alumnos/<string:no_control>', methods=['GET'])
 def api_get_alumno(no_control):
@@ -105,5 +102,63 @@ def api_delete_alumno(no_control):
         db.session.commit()
     return ('', 204)
 
+# Rutas con vistas
+
+@app.route('/')
+def index():
+    """Página principal que lista todos los alumnos."""
+    alumnos = Estudiante.query.all()
+    return render_template('index.html', alumnos=alumnos)
+
+@app.route('/alumnos/new', methods=['GET', 'POST'])
+def create_estudiante():
+    """Crea un nuevo estudiante."""
+    if request.method == 'POST':
+        no_control = request.form['no_control']
+        nombre = request.form['nombre']
+        ap_paterno = request.form['ap_paterno']
+        ap_materno = request.form['ap_materno']
+        semestre = request.form['semestre']
+
+        if not all([no_control, nombre, ap_paterno, ap_materno, semestre.isdigit()]):
+            return render_template('create_estudiante.html', error="Por favor, complete todos los campos correctamente.")
+
+        nuevo_estudiante = Estudiante(
+            no_control=no_control,
+            nombre=nombre,
+            ap_paterno=ap_paterno,
+            ap_materno=ap_materno,
+            semestre=int(semestre)
+        )
+        db.session.add(nuevo_estudiante)
+        db.session.commit()
+        return redirect(url_for('index'))
+
+    return render_template('create_estudiante.html')
+
+@app.route('/alumnos/update/<string:no_control>', methods=['GET', 'POST'])
+def update_estudiante(no_control):
+    """Actualiza un estudiante existente."""
+    estudiante = Estudiante.query.get(no_control)
+    if request.method == 'POST':
+        estudiante.nombre = request.form['nombre']
+        estudiante.ap_paterno = request.form['ap_paterno']
+        estudiante.ap_materno = request.form['ap_materno']
+        estudiante.semestre = int(request.form['semestre'])
+        
+        db.session.commit()
+        return redirect(url_for('index'))
+    
+    return render_template('update_estudiante.html', estudiante=estudiante)
+
+@app.route('/alumnos/delete/<string:no_control>')
+def delete_estudiante(no_control):
+    """Elimina un estudiante existente."""
+    estudiante = Estudiante.query.get(no_control)
+    if estudiante:
+        db.session.delete(estudiante)
+        db.session.commit()
+    return redirect(url_for('index'))
+
 if __name__ == '__main__':
-    app.run(debug=os.getenv('FLASK_DEBUG', 'False') == 'True')
+    app.run(debug=True)
