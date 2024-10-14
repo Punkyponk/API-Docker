@@ -9,7 +9,7 @@ load_dotenv()
 app = Flask(__name__)
 
 # Configuración de la base de datos
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://samvela:2SeoGMqxUjLbo2eZT3xpF7nqJQwrdiDT@dpg-crjk96dumphs73d1nt3g-a/samvela'
+app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -17,7 +17,6 @@ db = SQLAlchemy(app)
 # Modelo de la base de datos
 class Estudiante(db.Model):
     __tablename__ = 'alumnos'
-    __table_args__ = {'schema': 'public'}
     no_control = db.Column(db.String, primary_key=True)
     nombre = db.Column(db.String)
     ap_paterno = db.Column(db.String)
@@ -34,22 +33,18 @@ class Estudiante(db.Model):
         }
 
 # Rutas de la API
-
 @app.route('/api/alumnos', methods=['GET'])
 def api_get_alumnos():
-    """Obtiene la lista de todos los alumnos."""
     alumnos = Estudiante.query.all()
     return jsonify([alumno.to_dict() for alumno in alumnos])
 
 @app.route('/api/alumnos/<string:no_control>', methods=['GET'])
 def api_get_alumno(no_control):
-    """Obtiene un alumno específico por su no_control."""
     alumno = Estudiante.query.get(no_control)
     return jsonify(alumno.to_dict()) if alumno else ('', 404)
 
 @app.route('/api/alumnos', methods=['POST'])
 def api_create_alumno():
-    """Crea un nuevo alumno."""
     new_alumno = request.json
     if not all(key in new_alumno for key in ['no_control', 'nombre', 'ap_paterno', 'ap_materno', 'semestre']):
         return jsonify({"error": "Faltan datos requeridos"}), 400
@@ -67,7 +62,6 @@ def api_create_alumno():
 
 @app.route('/api/alumnos/<string:no_control>', methods=['PUT'])
 def api_update_alumno(no_control):
-    """Actualiza un alumno existente."""
     alumno = Estudiante.query.get(no_control)
     if not alumno:
         return ('', 404)
@@ -81,7 +75,6 @@ def api_update_alumno(no_control):
 
 @app.route('/api/alumnos/<string:no_control>', methods=['PATCH'])
 def api_patch_alumno(no_control):
-    """Actualiza parcialmente un alumno existente."""
     alumno = Estudiante.query.get(no_control)
     if not alumno:
         return ('', 404)
@@ -95,7 +88,6 @@ def api_patch_alumno(no_control):
 
 @app.route('/api/alumnos/<string:no_control>', methods=['DELETE'])
 def api_delete_alumno(no_control):
-    """Elimina un alumno existente."""
     alumno = Estudiante.query.get(no_control)
     if alumno:
         db.session.delete(alumno)
@@ -103,16 +95,13 @@ def api_delete_alumno(no_control):
     return ('', 204)
 
 # Rutas con vistas
-
 @app.route('/')
 def index():
-    """Página principal que lista todos los alumnos."""
     alumnos = Estudiante.query.all()
     return render_template('index.html', alumnos=alumnos)
 
 @app.route('/alumnos/new', methods=['GET', 'POST'])
 def create_estudiante():
-    """Crea un nuevo estudiante."""
     if request.method == 'POST':
         no_control = request.form['no_control']
         nombre = request.form['nombre']
@@ -138,7 +127,6 @@ def create_estudiante():
 
 @app.route('/alumnos/update/<string:no_control>', methods=['GET', 'POST'])
 def update_estudiante(no_control):
-    """Actualiza un estudiante existente."""
     estudiante = Estudiante.query.get(no_control)
     if request.method == 'POST':
         estudiante.nombre = request.form['nombre']
@@ -153,7 +141,6 @@ def update_estudiante(no_control):
 
 @app.route('/alumnos/delete/<string:no_control>')
 def delete_estudiante(no_control):
-    """Elimina un estudiante existente."""
     estudiante = Estudiante.query.get(no_control)
     if estudiante:
         db.session.delete(estudiante)
@@ -161,4 +148,6 @@ def delete_estudiante(no_control):
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    with app.app_context():
+        db.create_all()  # Crea las tablas si no existen
+    app.run(debug=True, host='0.0.0.0')
