@@ -1,15 +1,11 @@
 import os
 from flask import Flask, request, jsonify, render_template, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
-from dotenv import load_dotenv
-
-# Cargar las variables de entorno desde el archivo .env
-load_dotenv()
 
 app = Flask(__name__)
 
 # Configuración de la base de datos
-app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:ichi200bm@localhost:3306/mysql-db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
